@@ -1,0 +1,32 @@
+{
+  "name": "aura-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "2.1.7",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@tanstack/react-query": "^5.85.5",
+    "@vanilla-extract/css": "^1.17.4",
+    "@vanilla-extract/sprinkles": "^1.6.5",
+    "lucide-react": "^0.542.0",
+    "next": "^15.5.2",
+    "postcss": "^8.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-unity-webgl": "^10.1.5",
+    "tailwindcss": "^4.1.12",
+    "viem": "2.36.0",
+    "wagmi": "^2.16.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.12",
+    "eslint-config-next": "^15.5.2",
+    "typescript": "5.9.2"
+  }
+}
