@@ -1,78 +1,31 @@
 import { useEffect, useState } from "react";
-import {
-  requestBindWallet,
-  confirmBindWallet,
-  unbindWallet,
-} from "../api/auraServer";
 import { getUserDeck, getUserGems, GemItem } from "../api/auraServer";
 import { useRouter } from "next/router";
 import { useUser } from "../context/UserContext";
+import { useSui } from "../context/SuiContext";
 import { LogOut } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, setUser } = useUser();
-  const [bindLoading, setBindLoading] = useState(false);
-  const [bindError, setBindError] = useState("");
-  const [bindSuccess, setBindSuccess] = useState("");
+  const { user, logout, isAuthenticated } = useUser();
+  const { zkLoginState } = useSui();
   const [deck, setDeck] = useState<number[]>([]);
   const [gems, setGems] = useState<GemItem[]>([]);
   const [deckLoading, setDeckLoading] = useState(false);
   const [deckError, setDeckError] = useState("");
   const router = useRouter();
 
-  // BNB 測試鏈的配置
-  const BNB_CHAIN_ID = "0x61"; // BNB Smart Chain Testnet
-  const BNB_CHAIN_NAME = "BNB Smart Chain Testnet";
-  const BNB_RPC_URL = "https://data-seed-prebsc-1-s1.binance.org:8545/";
-  const BNB_BLOCK_EXPLORER = "https://testnet.bscscan.com/";
-
-  // 檢查並切換到 BNB 鏈
-  const switchToBNBChain = async () => {
-    try {
-      // 檢查是否已經在 BNB 鏈上
-      const currentChainId = await window.ethereum!.request({ method: "eth_chainId" });
-
-      if (currentChainId !== BNB_CHAIN_ID) {
-        // 嘗試切換到 BNB 鏈
-        await window.ethereum!.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: BNB_CHAIN_ID }],
-        });
-      }
-    } catch (switchError: any) {
-      // 如果 BNB 鏈不存在於用戶的 MetaMask 中，則添加它
-      if (switchError.code === 4902) {
-        try {
-          await window.ethereum!.request({
-            method: "wallet_addEthereumChain",
-            params: [
-              {
-                chainId: BNB_CHAIN_ID,
-                chainName: BNB_CHAIN_NAME,
-                nativeCurrency: {
-                  name: "BNB",
-                  symbol: "BNB",
-                  decimals: 18,
-                },
-                rpcUrls: [BNB_RPC_URL],
-                blockExplorerUrls: [BNB_BLOCK_EXPLORER],
-              },
-            ],
-          });
-        } catch (addError) {
-          throw new Error("Failed to add BNB chain to MetaMask");
-        }
-      } else {
-        throw new Error("Failed to switch to BNB chain");
-      }
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
     }
-  };
-
-  // user 狀態已由 context 管理
+  }, [isAuthenticated, router]);
 
   // 取得目前牌組與卡片資訊
   useEffect(() => {
-    if (!user?.token) return;
+    if (!user?.token) {
+      return;
+    }
     setDeckLoading(true);
     Promise.all([getUserDeck(user.token), getUserGems(user.token)])
       .then(([deck, gems]) => {
@@ -85,68 +38,7 @@ export default function ProfilePage() {
       .finally(() => setDeckLoading(false));
   }, [user?.token]);
 
-  // 綁定錢包流程
-  const handleBindWallet = async () => {
-    setBindLoading(true);
-    setBindSuccess("");
-    setBindError("");
-    try {
-      // 1. 檢查 MetaMask 是否已安裝
-      if (!window.ethereum) {
-        throw new Error("MetaMask is not installed. Please install MetaMask first.");
-      }
-
-      // 2. 切換到 BNB 鏈
-      await switchToBNBChain();
-
-      // 3. 連接錢包
-      const accounts = await window.ethereum!.request({
-        method: "eth_requestAccounts",
-      });
-      const wallet = accounts?.[0];
-      if (!wallet) throw new Error("Please connect your wallet");
-
-      // 4. 驗證是否在正確的鏈上
-      const currentChainId = await window.ethereum!.request({ method: "eth_chainId" });
-      if (currentChainId !== BNB_CHAIN_ID) {
-        throw new Error("Please make sure you are connected to BNB Smart Chain Testnet");
-      }
-
-      // 5. 取得 nonce
-      const { nonce } = await requestBindWallet(user!.token, wallet);
-      if (!nonce) throw new Error("Cannot get nonce");
-
-      // 6. 用 MetaMask personal_sign 對 nonce 簽名
-      const signature = await window.ethereum!.request({
-        method: "personal_sign",
-        params: [nonce, wallet],
-      });
-
-      // 7. confirm 綁定
-      await confirmBindWallet(user!.token, wallet, signature);
-      setUser({ ...user!, walletAddress: wallet });
-      setBindSuccess("Wallet bound successfully to BNB Smart Chain!");
-    } catch (e: any) {
-      setBindError(e.message);
-    } finally {
-      setBindLoading(false);
-    }
-  };
-
-  const handleUnbindWallet = async () => {
-    setBindLoading(true);
-    setBindSuccess("");
-    setBindError("");
-    try {
-      await unbindWallet(user!.token, user!.walletAddress!);
-      setUser({ ...user!, walletAddress: "" });
-      setBindSuccess("Wallet unbound successfully!");
-    } catch (e: any) {
-      setBindError(e.message);
-    } finally {
-      setBindLoading(false);
-    }
-  };
+  // No wallet binding needed - zkLogin handles authentication
 
   return (
     <div className="min-h-screen bgImg text-white flex flex-col">
@@ -155,8 +47,8 @@ export default function ProfilePage() {
         <h1 className="text-lg text-gray-400 ">Profile</h1>
 
 
-        <button className="btn-square p-3 rounded-xl hover:bg-white/10 transition-colors text-xs" aria-label="Lot Out" onClick={() => {
-          setUser(null);
+        <button className="btn-square p-3 rounded-xl hover:bg-white/10 transition-colors text-xs" aria-label="Log Out" onClick={() => {
+          logout();
           router.push("/login");
         }}>
           <LogOut />
@@ -175,31 +67,34 @@ export default function ProfilePage() {
               <div>
                 <h2 className="text-2xl font-bold">
                   <div className="mb-2">
-                    <span className="font-semibold">UserName</span>{" "}
+                    <span className="font-semibold">{user?.username || user?.email || 'User'}</span>{" "}
                   </div>
                 </h2>
                 <p className="text-sm text-white">ID: {user?.userId}</p>
+                {user?.email && (
+                  <p className="text-sm text-gray-300">Email: {user.email}</p>
+                )}
               </div>
             </div>
 
-            {/* Wallet Info */}
+            {/* Sui zkLogin Wallet Info */}
             <div className="pt-4">
-              <p className="text-white text-sm mb-3">Aurayale Gem Wallet</p>
+              <p className="text-white text-sm mb-3">Sui zkLogin Wallet</p>
               <div className="flex justify-between items-center">
                 {/* Left side: Address/Status */}
                 <div className="flex items-center space-x-2">
-                  {user?.walletAddress ? (
+                  {zkLoginState.isAuthenticated && user?.suiAddress ? (
                     <>
                       <p className="font-mono text-lg">
-                        {user.walletAddress.slice(0, 6)}...
-                        {user.walletAddress.slice(-4)}
+                        {user.suiAddress.slice(0, 8)}...
+                        {user.suiAddress.slice(-6)}
                       </p>
                       <button
                         className="p-1 rounded-full hover:bg-white/10 transition-colors"
                         onClick={() =>
-                          navigator.clipboard.writeText(user.walletAddress!)
+                          navigator.clipboard.writeText(user.suiAddress!)
                         }
-                        title="Copy wallet address"
+                        title="Copy Sui address"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -218,34 +113,37 @@ export default function ProfilePage() {
                       </button>
                     </>
                   ) : (
-                    <span className="text-gray py-1 px-3 rounded-xl bg-gray-600/90">Not bound</span>
+                    <span className="text-gray py-1 px-3 rounded-xl bg-gray-600/90">Not connected</span>
                   )}
                 </div>
-                {/* Right side: Button */}
-                {user?.walletAddress ? (
-                  <button
-                    className="btn-red text-white font-semibold py-2 px-3 rounded-xl text-sm"
-                    onClick={handleUnbindWallet}
-                    disabled={bindLoading}
-                  >
-                    {bindLoading ? "Unbinding..." : "Unbind Wallet"}
-                  </button>
-                ) : (
-                  <button
-                    className="btn-main text-white font-semibold py-2 px-3 rounded-xl text-sm"
-                    onClick={handleBindWallet}
-                    disabled={bindLoading}
-                  >
-                    {bindLoading ? "Binding..." : "Bind Wallet"}
-                  </button>
+                {/* Right side: Status */}
+                <div className="flex flex-col items-end">
+                  {zkLoginState.isAuthenticated ? (
+                    <>
+                      <span className="text-green-400 text-sm font-semibold">✓ Connected via Google</span>
+                      <span className="text-xs text-gray-300">Gas sponsored by SHINAMI</span>
+                    </>
+                  ) : (
+                    <span className="text-yellow-400 text-sm">Please login to connect</span>
+                  )}
+                </div>
+              </div>
+              
+              {/* zkLogin Status Info */}
+              <div className="mt-4 p-3 bg-black/20 rounded-xl">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-300">Authentication:</span>
+                  <span className={zkLoginState.isAuthenticated ? "text-green-400" : "text-red-400"}>
+                    {zkLoginState.isAuthenticated ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                {zkLoginState.maxEpoch && (
+                  <div className="flex justify-between items-center text-sm mt-1">
+                    <span className="text-gray-300">Valid until epoch:</span>
+                    <span className="text-blue-400">{zkLoginState.maxEpoch}</span>
+                  </div>
                 )}
               </div>
-              {bindError && (
-                <div className="mt-4 bg-black/30 px-4 py-1  rounded-xl text-red-400 text-center">{bindError}</div>
-              )}
-              {bindSuccess && (
-                <div className="mt-4 bg-black/30 px-4 py-1  rounded-xl text-green-300 text-center">{bindSuccess}</div>
-              )}
             </div>
 
           </div>
