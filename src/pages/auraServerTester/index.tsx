@@ -25,7 +25,7 @@ const MetaMaskButton = ({ onConnect, isLoading, isConnected, walletAddress }: Me
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
-    setIsInstalled(typeof window !== "undefined" && typeof window.ethereum !== "undefined")
+    setIsInstalled(typeof window !== "undefined" && typeof (window as any).ethereum !== "undefined")
   }, [])
 
   return (
@@ -44,7 +44,7 @@ const MetaMaskStatus = () => {
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
-    setIsInstalled(typeof window !== "undefined" && typeof window.ethereum !== "undefined")
+    setIsInstalled(typeof window !== "undefined" && typeof (window as any).ethereum !== "undefined")
   }, [])
 
   if (!isInstalled) {
@@ -73,7 +73,7 @@ export default function AuraServerTester() {
 
   // Check if MetaMask is installed
   const isMetaMaskInstalled = () => {
-    return typeof window !== "undefined" && typeof window.ethereum !== "undefined"
+    return typeof window !== "undefined" && typeof (window as any).ethereum !== "undefined"
   }
 
   // Connect to MetaMask
@@ -87,7 +87,7 @@ export default function AuraServerTester() {
       setLoading(true)
       setError("")
 
-      const accounts = await window.ethereum!.request({
+      const accounts = await (window as any).ethereum.request({
         method: "eth_requestAccounts",
       })
 
@@ -143,7 +143,7 @@ export default function AuraServerTester() {
       setError("")
 
       // Sign the nonce with MetaMask
-      const signature = await window.ethereum!.request({
+      const signature = await (window as any).ethereum.request({
         method: "personal_sign",
         params: [nonce, walletAddress],
       })

@@ -37,7 +37,7 @@ export default function DeckPage() {
       setError(e.message);
     }).finally(() => setLoading(false));
     setUsername(user.username);
-    setWalletAddress(user.walletAddress || "");
+    setWalletAddress(user.suiAddress || "");
   }, [router, user]);
 
   const toggleCardSelection = (cardId: number) => {
@@ -181,4 +181,4 @@ export default function DeckPage() {
       {/* 其他 deck 管理功能可陸續搬移進來 */}
     </div>
   );
-} 
+}

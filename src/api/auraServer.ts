@@ -123,3 +123,70 @@ export async function loginWithGoogle(idToken: string) {
   if (!response.ok) throw new Error(data.error || 'Google login failed');
   return data;
 }
+
+// Sui zkLogin authentication functions
+export async function loginWithSuiZkLogin(suiAddress: string, jwtToken: string, googleId: string, email?: string, name?: string) {
+  const response = await fetch(`${BASE_URL}/sui-zklogin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      suiAddress, 
+      jwtToken, 
+      googleId,
+      email,
+      name
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Sui zkLogin failed');
+  return data;
+}
+
+// Update user profile with Sui address
+export async function updateUserSuiAddress(jwt: string, suiAddress: string) {
+  const response = await fetch(`${BASE_URL}/user/sui-address`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${jwt}`,
+    },
+    body: JSON.stringify({ suiAddress }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to update Sui address');
+  return data;
+}
+
+// Legacy wallet binding functions (kept for backward compatibility)
+// These can be removed once the backend fully supports Sui zkLogin
+export async function requestBindSuiWallet(jwt: string, suiAddress: string) {
+  const response = await fetch(`${BASE_URL}/bind-sui-wallet/request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${jwt}`,
+    },
+    body: JSON.stringify({ suiAddress }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Request bind Sui wallet failed');
+  return data;
+}
+
+export async function confirmBindSuiWallet(
+  jwt: string,
+  suiAddress: string,
+  zkProof: any
+) {
+  const response = await fetch(`${BASE_URL}/bind-sui-wallet/confirm`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${jwt}`,
+    },
+    body: JSON.stringify({ suiAddress, zkProof }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Confirm bind Sui wallet failed');
+  return data;
+}
