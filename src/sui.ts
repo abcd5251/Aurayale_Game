@@ -14,7 +14,7 @@ export const SHINAMI_GAS_SPONSOR_URL = 'https://api.shinami.com/gas/v1';
 export const SHINAMI_KEY = process.env.NEXT_PUBLIC_SHINAMI_KEY || 'us1_sui_mainnet_43fef6cfd79046f596f51d046b811c70';
 
 // Google OAuth configuration for zkLogin
-export const GOOGLE_CLIENT_ID = '225001606831-0ungji9dugnft0lu1lbb44c0vvfhs48r.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID = '225001606831-e3r4aaj98a86lq97gdlj8gvhvlab3duv.apps.googleusercontent.com';
 export const REDIRECT_URI = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '';
 
 // zkLogin configuration
