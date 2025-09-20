@@ -23,7 +23,9 @@ export default function ProfilePage() {
 
   // 取得目前牌組與卡片資訊
   useEffect(() => {
-    if (!user?.token) return;
+    if (!user?.token) {
+      return;
+    }
     setDeckLoading(true);
     Promise.all([getUserDeck(user.token), getUserGems(user.token)])
       .then(([deck, gems]) => {

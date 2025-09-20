@@ -36,15 +36,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         
         // Use backend JWT token if available, otherwise fall back to zkLogin JWT
         const backendToken = localStorage.getItem('backend-jwt');
+        const effectiveToken = backendToken || zkLoginState.jwtToken || '';
         
-        setUser({
-          token: backendToken || zkLoginState.jwtToken || '',
-          userId: jwtPayload?.sub || zkLoginState.userAddress,
-          username: jwtPayload?.name || jwtPayload?.email || 'User',
-          suiAddress: zkLoginState.userAddress,
-          googleId: jwtPayload?.sub,
-          email: jwtPayload?.email,
-        });
+        // Only update user if we have a valid token
+        if (effectiveToken) {
+          setUser({
+            token: effectiveToken,
+            userId: jwtPayload?.sub || zkLoginState.userAddress,
+            username: jwtPayload?.name || jwtPayload?.email || 'User',
+            suiAddress: zkLoginState.userAddress,
+            googleId: jwtPayload?.sub,
+            email: jwtPayload?.email,
+          });
+        }
       }
     } else if (!zkLoginState.isAuthenticated && user) {
       // If Sui is not authenticated but we have a user, clear it
@@ -57,6 +61,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     suiLogout();
     // Clear any stored authentication data
     localStorage.removeItem('user-token');
+    localStorage.removeItem('backend-jwt');
   };
 
   const isAuthenticated = zkLoginState.isAuthenticated && !!user;

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { useUser } from '../context/UserContext';
 import { useSui } from '../context/SuiContext';
 import { useRouter } from 'next/router';
+import { loginWithPassword, registerWithPassword } from '../api/auraServer';
 
 interface LoginComponentProps {
   errorMessage?: string;
@@ -14,7 +15,12 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
 }) => {
   const [localError, setLocalError] = useState('');
   const [localSuccess, setLocalSuccess] = useState('');
-  const { user, isAuthenticated } = useUser();
+  const [showTraditionalLogin, setShowTraditionalLogin] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isTraditionalLoading, setIsTraditionalLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { user, isAuthenticated, setUser } = useUser();
   const { zkLoginState, initializeZkLogin, loginWithGoogle, completeZkLogin, isLoading, error } = useSui();
   const router = useRouter();
 
@@ -74,6 +80,80 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
       initializeZkLogin();
     }
   }, []);
+
+  const handleTraditionalRegister = async () => {
+    if (!username || !password) {
+      setLocalError('请输入用户名和密码');
+      return;
+    }
+
+    try {
+      setIsTraditionalLoading(true);
+      setLocalError('');
+      
+      const result = await registerWithPassword(username, password);
+      
+      if (result.token) {
+        // Store the token
+        localStorage.setItem('backend-jwt', result.token);
+        
+        // Set user data
+        setUser({
+          userId: result.user?.id || username,
+          username: result.user?.username || username,
+          suiAddress: result.user?.address || '',
+          token: result.token
+        });
+        
+        setLocalSuccess('注册成功！');
+        router.push('/deck');
+      } else {
+        setLocalError('注册失败：无效的响应');
+      }
+    } catch (error: any) {
+      console.error('Traditional register error:', error);
+      setLocalError(error.message || '注册失败');
+    } finally {
+      setIsTraditionalLoading(false);
+    }
+  };
+
+  const handleTraditionalLogin = async () => {
+    if (!username || !password) {
+      setLocalError('请输入用户名和密码');
+      return;
+    }
+
+    try {
+      setIsTraditionalLoading(true);
+      setLocalError('');
+      
+      const result = await loginWithPassword(username, password);
+      
+      if (result.token) {
+        // Store the token
+        localStorage.setItem('backend-jwt', result.token);
+        
+        // Set user data
+        setUser({
+          userId: result.user?.id || username,
+          username: result.user?.username || username,
+          suiAddress: result.user?.address || '',
+          token: result.token
+        });
+        
+        setLocalSuccess('登录成功！');
+        router.push('/deck');
+      } else {
+        setLocalError('登录失败：无效的响应');
+      }
+    } catch (error: any) {
+      console.error('Traditional login error:', error);
+      setLocalError(error.message || '登录失败');
+    } finally {
+      setIsTraditionalLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -148,6 +228,57 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
             <div className="text-center text-sm text-gray-300">
               <p>Secure authentication powered by Sui zkLogin</p>
               <p className="text-xs mt-1">Gas fees sponsored by SHINAMI</p>
+            </div>
+            
+            {/* Traditional Login Option */}
+            <div className="mt-6 pt-4 border-t border-gray-600">
+              <button
+                onClick={() => setShowTraditionalLogin(!showTraditionalLogin)}
+                className="text-sm text-blue-400 hover:text-blue-300 underline"
+              >
+                {showTraditionalLogin ? '隐藏传统登录' : '使用传统登录'}
+              </button>
+              
+              {showTraditionalLogin && (
+                <div className="mt-4 p-4 bg-black/40 rounded-lg">
+                  <div className="space-y-3">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="用户名"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="password"
+                        placeholder="密码"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleTraditionalLogin}
+                        disabled={isTraditionalLoading}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isTraditionalLoading ? '登录中...' : '登录'}
+                      </button>
+                      <button
+                        onClick={handleTraditionalRegister}
+                        disabled={isTraditionalLoading}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isTraditionalLoading ? '注册中...' : '注册'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

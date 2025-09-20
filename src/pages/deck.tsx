@@ -34,6 +34,7 @@ export default function DeckPage() {
       setGems(gems);
       setCurrentDeck(Array.isArray(deck) ? deck : []);
     }).catch(e => {
+      console.error('API error:', e);
       setError(e.message);
     }).finally(() => setLoading(false));
     setUsername(user.username);

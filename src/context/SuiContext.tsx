@@ -143,29 +143,22 @@ export const SuiProvider = ({ children }: { children: ReactNode }) => {
       const email = jwtPayload.email;
       const name = jwtPayload.name;
       
-      // For now, we'll use a simplified address derivation
-      // In a real implementation, you'd need to generate the zkLogin proof
-      // and derive the actual Sui address from it
-      const userAddress = `0x${userSub.replace(/[^a-f0-9]/gi, '').padStart(64, '0').slice(0, 64)}`;
+      // Use fixed address instead of deriving from JWT
+      const userAddress = '0x00643419abf59b2139b7b63fb1e36678bde38f5d4558917f56ea189f740cdf0c';
       
       if (!isValidSuiAddress(userAddress)) {
         throw new Error('Failed to generate valid Sui address');
       }
 
-      // Authenticate with the backend using Sui zkLogin
+      // Authenticate with the backend using fixed test account
       try {
-        const authResult = await loginWithSuiZkLogin(
-          userAddress,
-          jwtToken,
-          userSub,
-          email,
-          name
-        );
+        const { loginWithPassword } = await import('../api/auraServer');
+        const authResult = await loginWithPassword('test1234', 'Love@aura2025');
         
         // Store the backend JWT token for API calls
         localStorage.setItem('backend-jwt', authResult.token);
       } catch (apiError) {
-        console.warn('Backend authentication failed, continuing with local auth:', apiError);
+        console.warn('Backend authentication with test account failed, continuing with local auth:', apiError);
         // Continue with local authentication even if backend fails
       }
 
