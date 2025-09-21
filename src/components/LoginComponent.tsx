@@ -236,7 +236,7 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
                 onClick={() => setShowTraditionalLogin(!showTraditionalLogin)}
                 className="text-sm text-blue-400 hover:text-blue-300 underline"
               >
-                {showTraditionalLogin ? '隐藏传统登录' : '使用传统登录'}
+                {showTraditionalLogin ? 'login' : 'login'}
               </button>
               
               {showTraditionalLogin && (
